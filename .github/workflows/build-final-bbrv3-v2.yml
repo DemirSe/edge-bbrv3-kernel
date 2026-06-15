@@ -1,0 +1,137 @@
+name: build-final-bbrv3-v2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc bison flex libssl-dev libelf-dev \
+            dwarves pahole rsync kmod cpio xz-utils zstd \
+            dpkg-dev debhelper fakeroot git python3 perl wget file
+
+      - name: Clone google/bbr v3 and record provenance
+        run: |
+          set -euxo pipefail
+          git clone --depth=1 --branch v3 https://github.com/google/bbr.git linux-bbr
+          cd linux-bbr
+          {
+            echo "BBR_SOURCE_REPO=https://github.com/google/bbr"
+            echo "BBR_SOURCE_BRANCH=v3"
+            echo "BBR_SOURCE_COMMIT=$(git rev-parse HEAD)"
+            echo "BBR_SOURCE_COMMIT_DATE=$(git show -s --format=%cI HEAD)"
+            echo "BBR_SOURCE_SUBJECT=$(git show -s --format=%s HEAD)"
+            echo
+            grep -n '#define BBR_VERSION[[:space:]]*3' net/ipv4/tcp_bbr.c
+            grep -n 'BBR v3 state' net/ipv4/tcp_bbr.c
+          } | tee ../PROVENANCE.txt
+
+      - name: Configure kernel
+        working-directory: linux-bbr
+        run: |
+          set -euxo pipefail
+
+          cp ../configs/edge-bbrv3-v2.base .config
+
+          ./scripts/config --set-str LOCALVERSION "-edge-bbrv3-v2"
+
+          ./scripts/config --enable TCP_CONG_BBR
+          ./scripts/config --set-str DEFAULT_TCP_CONG "bbr"
+          ./scripts/config --enable NET_SCH_FQ
+
+          ./scripts/config --enable IPV6
+          ./scripts/config --enable NF_TABLES
+          ./scripts/config --enable NFT_CT
+
+          ./scripts/config --enable VIRTIO_PCI
+          ./scripts/config --enable VIRTIO_NET
+          ./scripts/config --enable SCSI_VIRTIO
+          ./scripts/config --enable BLK_DEV_SD
+          ./scripts/config --enable XFS_FS
+
+          ./scripts/config --enable BPF
+          ./scripts/config --enable BPF_SYSCALL
+          ./scripts/config --enable BPF_JIT
+          ./scripts/config --enable BPF_LSM
+          ./scripts/config --enable CGROUP_BPF
+          ./scripts/config --enable DEBUG_INFO
+          ./scripts/config --enable DEBUG_INFO_BTF
+          ./scripts/config --disable DEBUG_INFO_NONE
+          ./scripts/config --disable DEBUG_INFO_REDUCED
+          ./scripts/config --disable DEBUG_INFO_SPLIT
+
+          yes "" | make olddefconfig
+          make -s kernelrelease | tee ../KERNELRELEASE.txt
+          cp .config "../config-$(cat ../KERNELRELEASE.txt)"
+
+      - name: Validate config
+        working-directory: linux-bbr
+        run: |
+          set -euxo pipefail
+
+          kr="$(cat ../KERNELRELEASE.txt)"
+          case "$kr" in
+            *-edge-bbrv3-v2) ;;
+            *) echo "Unexpected kernel release: $kr"; exit 1 ;;
+          esac
+
+          required=(
+            CONFIG_TCP_CONG_BBR=y
+            'CONFIG_DEFAULT_TCP_CONG="bbr"'
+            CONFIG_NET_SCH_FQ=y
+            CONFIG_IPV6=y
+            CONFIG_NF_TABLES=y
+            CONFIG_NFT_CT=y
+            CONFIG_VIRTIO_PCI=y
+            CONFIG_VIRTIO_NET=y
+            CONFIG_SCSI_VIRTIO=y
+            CONFIG_BLK_DEV_SD=y
+            CONFIG_XFS_FS=y
+            CONFIG_BPF=y
+            CONFIG_BPF_SYSCALL=y
+            CONFIG_BPF_JIT=y
+            CONFIG_BPF_LSM=y
+            CONFIG_CGROUP_BPF=y
+            CONFIG_DEBUG_INFO_BTF=y
+          )
+
+          for item in "${required[@]}"; do
+            grep -Fx "$item" .config
+          done
+
+      - name: Build Debian packages
+        working-directory: linux-bbr
+        run: |
+          set -euxo pipefail
+          make -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION=2
+
+      - name: Collect artifact
+        run: |
+          set -euxo pipefail
+          kr="$(cat KERNELRELEASE.txt)"
+          mkdir -p out
+          cp "config-$kr" PROVENANCE.txt KERNELRELEASE.txt out/
+          cp ../linux-image-"$kr"_2_amd64.deb out/
+          cp ../linux-headers-"$kr"_2_amd64.deb out/ || true
+          (cd out && sha256sum * | tee SHA256SUMS)
+          ls -lh out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edge-bbrv3-v2-kernel
+          path: out/*
+          if-no-files-found: error
+          retention-days: 14
