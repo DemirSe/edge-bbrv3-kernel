@@ -127,8 +127,9 @@ jobs:
           kr="$(cat KERNELRELEASE.txt)"
           mkdir -p out
           cp "config-$kr" PROVENANCE.txt KERNELRELEASE.txt out/
-          cp ../linux-image-"$kr"_2_amd64.deb out/
-          cp ../linux-headers-"$kr"_2_amd64.deb out/ || true
+          find .. -maxdepth 1 -type f -name 'linux-image-*-edge-bbrv3-v2*_2_amd64.deb' -print -exec cp {} out/ \;
+          find .. -maxdepth 1 -type f -name 'linux-headers-*-edge-bbrv3-v2*_2_amd64.deb' -print -exec cp {} out/ \; || true
+          test "$(find out -maxdepth 1 -type f -name 'linux-image-*.deb' | wc -l)" -eq 1
           (cd out && sha256sum * | tee SHA256SUMS)
           ls -lh out
 
