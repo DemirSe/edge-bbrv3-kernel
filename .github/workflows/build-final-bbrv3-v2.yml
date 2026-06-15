@@ -84,7 +84,7 @@ jobs:
 
           kr="$(cat ../KERNELRELEASE.txt)"
           case "$kr" in
-            *-edge-bbrv3-v2) ;;
+            *-edge-bbrv3-v2|*-edge-bbrv3-v2+) ;;
             *) echo "Unexpected kernel release: $kr"; exit 1 ;;
           esac
 
