@@ -1,0 +1,82 @@
+kernel=6.12.43+deb13-amd64
+cmdline=BOOT_IMAGE=/boot/vmlinuz-6.12.43+deb13-amd64 root=UUID=04ca2616-6178-4a7d-a846-33d792a107a1 ro debian-installer=en_US.UTF-8 quiet
+rootfs=/dev/sda1 xfs rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota
+net_driver=virtio_net
+lsmod=
+Module                  Size  Used by
+nft_ct                 28672  2
+nf_conntrack          204800  1 nft_ct
+nf_defrag_ipv6         24576  1 nf_conntrack
+nf_defrag_ipv4         12288  1 nf_conntrack
+nf_tables             380928  25 nft_ct
+udp_diag               12288  0
+tcp_diag               12288  0
+inet_diag              28672  2 tcp_diag,udp_diag
+isofs                  57344  0
+intel_rapl_msr         20480  0
+intel_rapl_common      53248  1 intel_rapl_msr
+kvm_amd               217088  0
+ccp                   163840  1 kvm_amd
+kvm                  1396736  1 kvm_amd
+irqbypass              12288  1 kvm
+crct10dif_pclmul       12288  1
+ghash_clmulni_intel    16384  0
+sha512_ssse3           53248  0
+sha256_ssse3           32768  0
+sha1_ssse3             32768  0
+aesni_intel           122880  0
+gf128mul               16384  1 aesni_intel
+crypto_simd            16384  1 aesni_intel
+cryptd                 28672  2 crypto_simd,ghash_clmulni_intel
+pcspkr                 12288  0
+virtio_balloon         32768  0
+sg                     45056  0
+button                 24576  0
+evdev                  28672  2
+joydev                 24576  0
+binfmt_misc            28672  1
+configfs               69632  1
+efi_pstore             12288  0
+nfnetlink              20480  2 nf_tables
+vsock_loopback         12288  0
+vmw_vsock_virtio_transport_common    61440  1 vsock_loopback
+vmw_vsock_vmci_transport    45056  0
+vsock                  61440  5 vmw_vsock_virtio_transport_common,vsock_loopback,vmw_vsock_vmci_transport
+vmw_vmci              110592  1 vmw_vsock_vmci_transport
+qemu_fw_cfg            20480  0
+ip_tables              28672  0
+x_tables               53248  1 ip_tables
+autofs4                57344  2
+xfs                  2605056  1
+libcrc32c              12288  3 nf_conntrack,nf_tables,xfs
+crc32c_generic         12288  0
+bochs                  16384  0
+ata_generic            12288  0
+uhci_hcd               61440  0
+drm_vram_helper        28672  1 bochs
+drm_ttm_helper         16384  3 bochs,drm_vram_helper
+sr_mod                 28672  0
+ehci_pci               16384  0
+sd_mod                 81920  1
+ttm                   106496  2 drm_vram_helper,drm_ttm_helper
+ata_piix               45056  0
+cdrom                  81920  2 isofs,sr_mod
+ehci_hcd              110592  1 ehci_pci
+drm_kms_helper        253952  3 bochs,drm_vram_helper,drm_ttm_helper
+libata                462848  2 ata_piix,ata_generic
+usbcore               409600  3 ehci_pci,ehci_hcd,uhci_hcd
+drm                   774144  6 drm_kms_helper,bochs,drm_vram_helper,drm_ttm_helper,ttm
+virtio_scsi            28672  1
+virtio_net            118784  0
+scsi_mod              327680  5 virtio_scsi,sd_mod,libata,sg,sr_mod
+net_failover           24576  1 virtio_net
+crc32_pclmul           12288  0
+crc32c_intel           16384  1
+failover               12288  1 net_failover
+i2c_piix4              28672  0
+scsi_common            16384  5 scsi_mod,sd_mod,libata,sg,sr_mod
+psmouse               217088  0
+usb_common             16384  3 usbcore,ehci_hcd,uhci_hcd
+floppy                 94208  0
+i2c_smbus              16384  1 i2c_piix4
+serio_raw              16384  0

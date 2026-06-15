@@ -1,0 +1,39 @@
+name: Build Google BBRv3 kernel
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build minimal BBRv3 kernel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet /opt/hostedtoolcache/CodeQL || true
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc bison flex libssl-dev libelf-dev dwarves \
+            fakeroot rsync kmod cpio xz-utils git python3 pahole
+
+      - name: Build kernel
+        run: ./scripts/build-kernel.sh
+
+      - name: Upload kernel packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-bbrv3-kernel
+          path: artifacts/*
+          retention-days: 3
