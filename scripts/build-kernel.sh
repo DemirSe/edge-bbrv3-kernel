@@ -20,7 +20,9 @@ cd linux-bbrv3
 cp "$GITHUB_WORKSPACE/config/base-debian-edge.config" .config
 make olddefconfig
 
+set +o pipefail
 yes "" | make LSMOD="$GITHUB_WORKSPACE/vps/lsmod-edge-prod.txt" localmodconfig
+set -o pipefail
 ./scripts/kconfig/merge_config.sh -m .config "$GITHUB_WORKSPACE/config/edge-force.config"
 make olddefconfig
 
