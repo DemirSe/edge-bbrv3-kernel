@@ -73,7 +73,7 @@ jobs:
           ./scripts/config --disable DEBUG_INFO_REDUCED
           ./scripts/config --disable DEBUG_INFO_SPLIT
 
-          yes "" | make olddefconfig
+          make olddefconfig
           make -s kernelrelease | tee ../KERNELRELEASE.txt
           cp .config "../config-$(cat ../KERNELRELEASE.txt)"
 
