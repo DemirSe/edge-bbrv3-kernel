@@ -48,6 +48,18 @@ scripts/config --disable NFT_COMPAT || true
 
 make olddefconfig
 
+# Final debug-symbol strip before validation.
+for sym in $(grep -E '^CONFIG_DEBUG_INFO(_|=)' .config | sed -E 's/^CONFIG_([^=]+)=.*/\1/'); do
+  scripts/config --disable "$sym" || true
+done
+scripts/config --disable DEBUG_INFO || true
+scripts/config --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT || true
+scripts/config --disable DEBUG_INFO_DWARF4 || true
+scripts/config --disable DEBUG_INFO_DWARF5 || true
+scripts/config --disable DEBUG_INFO_BTF || true
+scripts/config --disable GDB_SCRIPTS || true
+make olddefconfig
+
 echo "Required config check:"
 grep -E 'CONFIG_TCP_CONG_BBR=|CONFIG_DEFAULT_TCP_CONG=|CONFIG_NET_SCH_FQ=|CONFIG_GENERIC_CPU3=|CONFIG_NETFILTER_ADVANCED=|CONFIG_VIRTIO_NET=|CONFIG_SCSI_VIRTIO=|CONFIG_XFS_FS=|CONFIG_IPV6=|CONFIG_NF_TABLES=|CONFIG_NFT_CT=' .config
 
